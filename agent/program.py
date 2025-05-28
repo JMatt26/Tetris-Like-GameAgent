@@ -130,6 +130,9 @@ class GameState:
         """
         This method returns a tuple containing two lists, each 
         holding the row and columns that are full
+
+        Args:
+                action: The last move that was made by an agent before updating the board
         """
         rows_to_check = set()
         cols_to_check = set()
@@ -160,12 +163,27 @@ class GameState:
                 
         return full_rows, full_cols
     
-    
+    def clear_lines(self, rows, cols):
+        """
+        Method responsible for clearing a line that is full
 
+        Args:
+                rows: List of rows that need to be cleared
+                cols: List of columns that need to be cleared
+        """
 
+        if rows:
+            for row in rows:
+                for c in range(0,11):
+                    if Coord(row, c) in self.board:
+                        self.board.pop(Coord(row, c), None)
         
-
-
+        if cols:
+            for col in cols:
+                for r in range(0,11):
+                    if Coord(r, col) in self.board:
+                        self.board.pop(Coord(r, col), None)
+    
 
 class Agent:
     """
