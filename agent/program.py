@@ -125,8 +125,8 @@ class SShape(Shape):
 
     def __init__(self, position=Coord(0, 0), rotation_index=0):
         shapes = [
-            [Coord(0, 0), Coord(1, 0), Coord(1, 1), Coord(2, 1)],
-            [Coord(0, 0), Coord(0, 1), Coord(10, 1), Coord(10, 2)]
+            [Coord(0, 0), Coord(1, 0), Coord(1, 10), Coord(0, 1)],
+            [Coord(0, 0), Coord(1, 0), Coord(0, 10), Coord(10, 10)]
         ]
         super().__init__(shapes, position, rotation_index)
 
