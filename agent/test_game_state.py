@@ -68,5 +68,87 @@ class TestGameState(unittest.TestCase):
         self.assertIn(2, full_rows)
         self.assertIn(7, full_cols)
 
+    def test_clear_single_row(self):
+        """Test clearing a single full row."""
+        # Fill row 3 completely
+        for c in range(11):
+            self.game_state.board[Coord(3, c)] = PlayerColor.RED
+        
+        # Add some other pieces that shouldn't be cleared
+        self.game_state.board[Coord(4, 0)] = PlayerColor.RED
+        self.game_state.board[Coord(4, 1)] = PlayerColor.RED
+        
+        # Clear row 3
+        self.game_state.clear_lines([3], [])
+        
+        # Verify row 3 is empty
+        for c in range(11):
+            self.assertNotIn(Coord(3, c), self.game_state.board)
+        
+        # Verify other pieces remain
+        self.assertIn(Coord(4, 0), self.game_state.board)
+        self.assertIn(Coord(4, 1), self.game_state.board)
+
+    def test_clear_single_column(self):
+        """Test clearing a single full column."""
+        # Fill column 5 completely
+        for r in range(11):
+            self.game_state.board[Coord(r, 5)] = PlayerColor.RED
+        
+        # Add some other pieces that shouldn't be cleared
+        self.game_state.board[Coord(0, 6)] = PlayerColor.RED
+        self.game_state.board[Coord(1, 6)] = PlayerColor.RED
+        
+        # Clear column 5
+        self.game_state.clear_lines([], [5])
+        
+        # Verify column 5 is empty
+        for r in range(11):
+            self.assertNotIn(Coord(r, 5), self.game_state.board)
+        
+        # Verify other pieces remain
+        self.assertIn(Coord(0, 6), self.game_state.board)
+        self.assertIn(Coord(1, 6), self.game_state.board)
+
+    def test_clear_multiple_lines(self):
+        """Test clearing multiple rows and columns simultaneously."""
+        # Fill row 2 and column 3 completely
+        for c in range(11):
+            self.game_state.board[Coord(2, c)] = PlayerColor.RED
+        for r in range(11):
+            self.game_state.board[Coord(r, 3)] = PlayerColor.RED
+        
+        # Add some pieces that shouldn't be cleared
+        self.game_state.board[Coord(4, 4)] = PlayerColor.RED
+        self.game_state.board[Coord(5, 5)] = PlayerColor.RED
+        
+        # Clear row 2 and column 3
+        self.game_state.clear_lines([2], [3])
+        
+        # Verify row 2 is empty
+        for c in range(11):
+            self.assertNotIn(Coord(2, c), self.game_state.board)
+        
+        # Verify column 3 is empty
+        for r in range(11):
+            self.assertNotIn(Coord(r, 3), self.game_state.board)
+        
+        # Verify other pieces remain
+        self.assertIn(Coord(4, 4), self.game_state.board)
+        self.assertIn(Coord(5, 5), self.game_state.board)
+
+    def test_clear_empty_lines(self):
+        """Test that clearing empty lines doesn't affect the board."""
+        # Add some pieces
+        self.game_state.board[Coord(0, 0)] = PlayerColor.RED
+        self.game_state.board[Coord(1, 1)] = PlayerColor.RED
+        
+        # Try to clear empty lines
+        self.game_state.clear_lines([5], [5])
+        
+        # Verify original pieces remain
+        self.assertIn(Coord(0, 0), self.game_state.board)
+        self.assertIn(Coord(1, 1), self.game_state.board)
+
 if __name__ == '__main__':
     unittest.main() 
