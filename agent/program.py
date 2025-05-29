@@ -82,10 +82,10 @@ class JShape(Shape):
 
     def __init__(self, position=Coord(0, 0), rotation_index=0):
         shapes = [
-            [Coord(0, 0), Coord(0, 1), Coord(10, 1), Coord(9, 1)],
-            [Coord(0, 0), Coord(1, 0), Coord(2, 0), Coord(0, 1)],
-            [Coord(0, 0), Coord(1, 0), Coord(1, 1), Coord(1, 2)],
-            [Coord(0, 0), Coord(0, 1), Coord(0, 2), Coord(1, 2)]
+            [Coord(0, 0), Coord(0, 1), Coord(10, 1), Coord(9, 1)], # Pointing Up
+            [Coord(0, 0), Coord(1, 0), Coord(1, 1), Coord(1, 2)],  # Pointing Right
+            [Coord(0, 0), Coord(0, 10), Coord(1, 10), Coord(2, 10)],  # Pointing Down
+            [Coord(0, 0), Coord(10, 0), Coord(10, 10), Coord(10, 9)]   # Pointing Left
         ]
         super().__init__(shapes, position, rotation_index)
 
