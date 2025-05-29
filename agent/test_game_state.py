@@ -5,7 +5,7 @@ import os
 # Add the parent directory to the Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from agent.program import GameState, PlaceAction, Coord
+from agent.program import GameState, PlaceAction, Coord, IShape, OShape, TShape, JShape, LShape, ZShape, SShape
 from referee.game import PlayerColor
 
 class TestGameState(unittest.TestCase):
@@ -149,6 +149,194 @@ class TestGameState(unittest.TestCase):
         # Verify original pieces remain
         self.assertIn(Coord(0, 0), self.game_state.board)
         self.assertIn(Coord(1, 1), self.game_state.board)
+
+class TestShapePlacement(unittest.TestCase):
+    def setUp(self):
+        """Set up test fixtures before each test method."""
+        pass
+
+    def test_ishape_placement(self):
+        """Test I-shape placement in different positions and rotations."""
+        # Test horizontal I-shape
+        shape = IShape(position=Coord(5, 3), rotation_index=0)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(5, 3), Coord(5, 4), Coord(5, 5), Coord(5, 6)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+        # Test vertical I-shape
+        shape = IShape(position=Coord(2, 4), rotation_index=1)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(2, 4), Coord(3, 4), Coord(4, 4), Coord(5, 4)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+    def test_oshape_placement(self):
+        """Test O-shape placement (rotation doesn't matter for O-shape)."""
+        shape = OShape(position=Coord(3, 3))
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(3, 3), Coord(3, 4), Coord(4, 3), Coord(4, 4)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+    def test_tshape_placement(self):
+        """Test T-shape placement in different rotations."""
+        # Test T-shape pointing down
+        shape = TShape(position=Coord(4, 4), rotation_index=0)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(4, 4), Coord(4, 5), Coord(4, 6), Coord(5, 5)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+        # Test T-shape pointing left
+        shape = TShape(position=Coord(4, 4), rotation_index=1)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(4, 4), Coord(5, 4), Coord(6, 4), Coord(5, 3)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+        # Test T-shape pointing up
+        shape = TShape(position=Coord(4, 4), rotation_index=2)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(4, 4), Coord(4, 3), Coord(4, 2), Coord(3, 3)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+        # Test T-shape pointing right
+        shape = TShape(position=Coord(4, 4), rotation_index=3)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(4, 4), Coord(3, 4), Coord(2, 4), Coord(3, 5)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+    def test_jshape_placement(self):
+        """Test J-shape placement in different rotations."""
+        # Test J-shape pointing up
+        shape = JShape(position=Coord(4, 4), rotation_index=0)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(4, 4), Coord(4, 5), Coord(3, 5), Coord(2, 5)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+        # Test J-shape pointing right
+        shape = JShape(position=Coord(4, 4), rotation_index=1)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(4, 4), Coord(5, 4), Coord(5, 5), Coord(5, 6)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+        # Test J-shape pointing down
+        shape = JShape(position=Coord(4, 4), rotation_index=2)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(4, 4), Coord(4, 3), Coord(5, 3), Coord(6, 3)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+        # Test J-shape pointing left
+        shape = JShape(position=Coord(4, 4), rotation_index=3)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(4, 4), Coord(3, 4), Coord(3, 3), Coord(3, 2)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+    def test_lshape_placement(self):
+        """Test L-shape placement in different rotations."""
+        # Test L-shape pointing up
+        shape = LShape(position=Coord(4, 4), rotation_index=0)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(4, 4), Coord(4, 3), Coord(3, 3), Coord(2, 3)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+        # Test L-shape pointing right
+        shape = LShape(position=Coord(4, 4), rotation_index=1)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(4, 4), Coord(3, 4), Coord(3, 5), Coord(3, 6)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+        # Test L-shape pointing down
+        shape = LShape(position=Coord(4, 4), rotation_index=2)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(4, 4), Coord(4, 5), Coord(5, 5), Coord(6, 5)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+        # Test L-shape pointing left
+        shape = LShape(position=Coord(4, 4), rotation_index=3)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(4, 4), Coord(5, 4), Coord(5, 3), Coord(5, 2)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+    def test_zshape_placement(self):
+        """Test Z-shape placement in different rotations."""
+        # Test Z-shape horizontal
+        shape = ZShape(position=Coord(4, 4), rotation_index=0)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(4, 4), Coord(5, 4), Coord(5, 5), Coord(4, 3)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+        # Test Z-shape vertical
+        shape = ZShape(position=Coord(4, 4), rotation_index=1)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(4, 4), Coord(4, 3), Coord(5, 3), Coord(3, 4)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+    def test_sshape_placement(self):
+        """Test S-shape placement in different rotations."""
+        # Test S-shape horizontal
+        shape = SShape(position=Coord(4, 4), rotation_index=0)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(4, 4), Coord(5, 4), Coord(5, 3), Coord(4, 5)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+        # Test S-shape vertical
+        shape = SShape(position=Coord(4, 4), rotation_index=1)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(4, 4), Coord(5, 4), Coord(4, 3), Coord(3, 3)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+    def test_edge_positions(self):
+        """Test shape placement at board edges."""
+        # Test I-shape at top-left corner
+        shape = IShape(position=Coord(9, 0), rotation_index=1)
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(9, 0), Coord(10, 0), Coord(0, 0), Coord(1, 0)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
+
+        # Test O-shape at bottom-right corner
+        shape = OShape(position=Coord(10, 10))
+        action = shape.get_place_action()
+        expected_coords = {
+            Coord(10, 10), Coord(10, 0), Coord(0, 0), Coord(0, 10)
+        }
+        self.assertEqual(set(action.coords), expected_coords)
 
 if __name__ == '__main__':
     unittest.main() 

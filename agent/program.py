@@ -27,7 +27,7 @@ class Shape:
         
         # Convert relative coordinates to absolute coordinates
         absolute_coords = [
-            Coord(self.position.r + coord.r, self.position.c + coord.c)
+            self.position + coord
             for coord in relative_coords
         ]
         
