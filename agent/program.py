@@ -15,18 +15,37 @@ class Shape:
         self.position = position
         self.rotation_index = rotation_index
 
+    def get_place_action(self) -> PlaceAction:
+        """
+        Generates a PlaceAction based on the shape's current position and rotation.
+        
+        Returns:
+            PlaceAction: A PlaceAction object representing the shape's placement
+        """
+        # Get the coordinates for the current rotation
+        relative_coords = self.shapes[self.rotation_index]
+        
+        # Convert relative coordinates to absolute coordinates
+        absolute_coords = [
+            self.position + coord
+            for coord in relative_coords
+        ]
+        
+        # Create and return the PlaceAction
+        return PlaceAction(*absolute_coords)
+
 
 class IShape(Shape):
     """
     I shape and its rotations, with a relative position at (0,0)
     """
 
-    def __init__(self, position=Coord(0, 0)):
+    def __init__(self, position=Coord(0, 0), rotation_index=0):
         shapes = [
             [Coord(0, 0), Coord(0, 1), Coord(0, 2), Coord(0, 3)],  # horizontal state
-            [Coord(0, 0), Coord(1, 0), Coord(2, 0), Coord(3, 0)]  # vertical state
+            [Coord(0, 0), Coord(1, 0), Coord(2, 0), Coord(3, 0)]   # vertical state
         ]
-        super().__init__(shapes, position)
+        super().__init__(shapes, position, rotation_index)
 
 
 class OShape(Shape):
@@ -34,11 +53,11 @@ class OShape(Shape):
     O shape and its rotations, with a relative position at (0,0)
     """
 
-    def __init__(self, position=Coord(0, 0)):
+    def __init__(self, position=Coord(0, 0), rotation_index=0):
         shapes = [
             [Coord(0, 0), Coord(0, 1), Coord(1, 0), Coord(1, 1)]
         ]
-        super().__init__(shapes, position)
+        super().__init__(shapes, position, rotation_index)
 
 
 class TShape(Shape):
@@ -46,14 +65,14 @@ class TShape(Shape):
     T shape and its rotations, with a relative position at (0,0)
     """
 
-    def __init__(self, position=Coord(0, 0)):
+    def __init__(self, position=Coord(0, 0), rotation_index=0):
         shapes = [
-            [Coord(0, 0), Coord(0, 1), Coord(0, 2), Coord(1, 1)],
-            [Coord(0, 0), Coord(0, 1), Coord(1, 1), Coord(10, 1)],
-            [Coord(0, 0), Coord(1, 0), Coord(1, 1), Coord(2, 0)],
-            [Coord(0, 0), Coord(0, 1), Coord(10, 1), Coord(0, 2)]
+            [Coord(0, 0), Coord(0, 1), Coord(0, 2), Coord(1, 1)],   # Pointing Down
+            [Coord(0, 0), Coord(1, 0), Coord(2, 0), Coord(1, 10)],  # Pointing Left
+            [Coord(0, 0), Coord(0, 10), Coord(0, 9), Coord(10, 10)], # Pointing Up
+            [Coord(0, 0), Coord(10, 0), Coord(9, 0), Coord(10, 1)]   # Pointing Right
         ]
-        super().__init__(shapes, position)
+        super().__init__(shapes, position, rotation_index)
 
 
 class JShape(Shape):
@@ -61,14 +80,14 @@ class JShape(Shape):
     J shape and its rotations, with a relative position at (0,0)
     """
 
-    def __init__(self, position=Coord(0, 0)):
+    def __init__(self, position=Coord(0, 0), rotation_index=0):
         shapes = [
-            [Coord(0, 0), Coord(0, 1), Coord(10, 1), Coord(9, 1)],
-            [Coord(0, 0), Coord(1, 0), Coord(2, 0), Coord(0, 1)],
-            [Coord(0, 0), Coord(1, 0), Coord(1, 1), Coord(1, 2)],
-            [Coord(0, 0), Coord(0, 1), Coord(0, 2), Coord(1, 2)]
+            [Coord(0, 0), Coord(0, 1), Coord(10, 1), Coord(9, 1)], # Pointing Up
+            [Coord(0, 0), Coord(1, 0), Coord(1, 1), Coord(1, 2)],  # Pointing Right
+            [Coord(0, 0), Coord(0, 10), Coord(1, 10), Coord(2, 10)],  # Pointing Down
+            [Coord(0, 0), Coord(10, 0), Coord(10, 10), Coord(10, 9)]   # Pointing Left
         ]
-        super().__init__(shapes, position)
+        super().__init__(shapes, position, rotation_index)
 
 
 class LShape(Shape):
@@ -76,14 +95,14 @@ class LShape(Shape):
     L shape and its rotations, with a relative position at (0,0)
     """
 
-    def __init__(self, position=Coord(0, 0)):
+    def __init__(self, position=Coord(0, 0), rotation_index=0):
         shapes = [
-            [Coord(0, 0), Coord(1, 0), Coord(2, 0), Coord(2, 1)],
-            [Coord(0, 0), Coord(0, 1), Coord(0, 2), Coord(1, 0)],
-            [Coord(0, 0), Coord(0, 1), Coord(1, 1), Coord(2, 1)],
-            [Coord(0, 0), Coord(0, 1), Coord(0, 2), Coord(10, 2)]
+            [Coord(0, 0), Coord(0, 10), Coord(10, 10), Coord(9, 10)],   # Pointing Up
+            [Coord(0, 0), Coord(10, 0), Coord(10, 1), Coord(10, 2)],    # Pointing Right
+            [Coord(0, 0), Coord(0, 1), Coord(1, 1), Coord(2, 1)],       # Pointing Down
+            [Coord(0, 0), Coord(1, 0), Coord(1, 10), Coord(1, 9)]       # Pointing Left
         ]
-        super().__init__(shapes, position)
+        super().__init__(shapes, position, rotation_index)
 
 
 class ZShape(Shape):
@@ -91,12 +110,12 @@ class ZShape(Shape):
     Z shape and its rotations, with a relative position at (0,0)
     """
 
-    def __init__(self, position=Coord(0, 0)):
+    def __init__(self, position=Coord(0, 0), rotation_index=0):
         shapes = [
-            [Coord(0, 0), Coord(0, 1), Coord(1, 1), Coord(1, 2)],
-            [Coord(0, 0), Coord(0, 1), Coord(1, 0), Coord(10, 1)]
+            [Coord(0, 0), Coord(1, 0), Coord(1, 1), Coord(0, 10)],
+            [Coord(0, 0), Coord(0, 10), Coord(1, 10), Coord(10, 0)]
         ]
-        super().__init__(shapes, position)
+        super().__init__(shapes, position, rotation_index)
 
 
 class SShape(Shape):
@@ -104,12 +123,12 @@ class SShape(Shape):
     S shape and its rotations, with a relative position at (0,0)
     """
 
-    def __init__(self, position=Coord(0, 0)):
+    def __init__(self, position=Coord(0, 0), rotation_index=0):
         shapes = [
-            [Coord(0, 0), Coord(1, 0), Coord(1, 1), Coord(2, 1)],
-            [Coord(0, 0), Coord(0, 1), Coord(10, 1), Coord(10, 2)]
+            [Coord(0, 0), Coord(1, 0), Coord(1, 10), Coord(0, 1)],
+            [Coord(0, 0), Coord(1, 0), Coord(0, 10), Coord(10, 10)]
         ]
-        super().__init__(shapes, position)
+        super().__init__(shapes, position, rotation_index)
 
 class GameState:
     """
