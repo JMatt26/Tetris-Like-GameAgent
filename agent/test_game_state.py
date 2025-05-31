@@ -338,5 +338,129 @@ class TestShapePlacement(unittest.TestCase):
         }
         self.assertEqual(set(action.coords), expected_coords)
 
+class TestValidCoords(unittest.TestCase):
+    def setUp(self):
+        """Set up test fixtures before each test method."""
+        self.game_state = GameState(board={}, current_player=PlayerColor.RED)
+
+    def test_empty_board(self):
+        """Test that an empty board returns an empty set of valid coordinates."""
+        valid_coords = self.game_state.find_valid_coords(PlayerColor.RED)
+        self.assertEqual(valid_coords, set())
+
+    def test_single_piece_valid_coords(self):
+        """Test finding valid coordinates around a single piece."""
+        # Place a single piece
+        self.game_state.board[Coord(5, 5)] = PlayerColor.RED
+        
+        valid_coords = self.game_state.find_valid_coords(PlayerColor.RED)
+        expected_coords = {
+            Coord(4, 5),  # up
+            Coord(6, 5),  # down
+            Coord(5, 4),  # left
+            Coord(5, 6)   # right
+        }
+        self.assertEqual(valid_coords, expected_coords)
+
+    def test_multiple_pieces_valid_coords(self):
+        """Test finding valid coordinates around multiple connected pieces."""
+        # Place multiple connected pieces
+        self.game_state.board[Coord(5, 5)] = PlayerColor.RED
+        self.game_state.board[Coord(5, 6)] = PlayerColor.RED
+        self.game_state.board[Coord(5, 7)] = PlayerColor.RED
+        
+        valid_coords = self.game_state.find_valid_coords(PlayerColor.RED)
+        expected_coords = {
+            Coord(4, 5),  # up of first piece
+            Coord(6, 5),  # down of first piece
+            Coord(5, 4),  # left of first piece
+            Coord(4, 6),  # up of middle piece
+            Coord(6, 6),  # down of middle piece
+            Coord(4, 7),  # up of last piece
+            Coord(6, 7),  # down of last piece
+            Coord(5, 8)   # right of last piece
+        }
+        self.assertEqual(valid_coords, expected_coords)
+
+    def test_edge_pieces_valid_coords(self):
+        """Test finding valid coordinates for pieces at board edges."""
+        # Place pieces at edges
+        self.game_state.board[Coord(0, 0)] = PlayerColor.RED  # top-left
+        self.game_state.board[Coord(10, 10)] = PlayerColor.RED  # bottom-right
+        
+        valid_coords = self.game_state.find_valid_coords(PlayerColor.RED)
+        expected_coords = {
+            Coord(1, 0),   # down of top-left
+            Coord(0, 1),   # right of top-left
+            Coord(0, 10),  # left of top-left and down of bottom-right
+            Coord(10, 0),  # up of top-left and right of bottom-right
+            Coord(9, 10),  # up of bottom-right
+            Coord(10, 9)   # left of bottom-right
+
+        }
+        self.assertEqual(valid_coords, expected_coords)
+
+    def test_opponent_pieces_ignored(self):
+        """Test that opponent's pieces are ignored when finding valid coordinates."""
+        # Place pieces of both colors
+        self.game_state.board[Coord(5, 5)] = PlayerColor.RED
+        self.game_state.board[Coord(5, 6)] = PlayerColor.BLUE
+        
+        valid_coords = self.game_state.find_valid_coords(PlayerColor.RED)
+        expected_coords = {
+            Coord(4, 5),  # up
+            Coord(6, 5),  # down
+            Coord(5, 4)   # left
+            # Coord(5, 6) is occupied by BLUE, so should not be included
+        }
+        self.assertEqual(valid_coords, expected_coords)
+
+    def test_occupied_spaces_excluded(self):
+        """Test that occupied spaces are not included in valid coordinates."""
+        # Create a small cluster of pieces
+        self.game_state.board[Coord(5, 5)] = PlayerColor.RED
+        self.game_state.board[Coord(5, 6)] = PlayerColor.RED
+        self.game_state.board[Coord(6, 5)] = PlayerColor.RED
+        self.game_state.board[Coord(6, 6)] = PlayerColor.RED
+        
+        valid_coords = self.game_state.find_valid_coords(PlayerColor.RED)
+        expected_coords = {
+            Coord(4, 5),  # up of top-left
+            Coord(4, 6),  # up of top-right
+            Coord(5, 4),  # left of top-left
+            Coord(6, 4),  # left of bottom-left
+            Coord(5, 7),  # right of top-right
+            Coord(6, 7),  # right of bottom-right
+            Coord(7, 5),  # down of bottom-left
+            Coord(7, 6)   # down of bottom-right
+        }
+        self.assertEqual(valid_coords, expected_coords)
+
+    def test_different_color_valid_coords(self):
+        """Test finding valid coordinates for different player colors."""
+        # Place pieces for both colors
+        self.game_state.board[Coord(5, 5)] = PlayerColor.RED
+        self.game_state.board[Coord(7, 7)] = PlayerColor.BLUE
+        
+        # Test for RED player
+        red_valid_coords = self.game_state.find_valid_coords(PlayerColor.RED)
+        red_expected = {
+            Coord(4, 5),  # up
+            Coord(6, 5),  # down
+            Coord(5, 4),  # left
+            Coord(5, 6)   # right
+        }
+        self.assertEqual(red_valid_coords, red_expected)
+        
+        # Test for BLUE player
+        blue_valid_coords = self.game_state.find_valid_coords(PlayerColor.BLUE)
+        blue_expected = {
+            Coord(6, 7),  # up
+            Coord(8, 7),  # down
+            Coord(7, 6),  # left
+            Coord(7, 8)   # right
+        }
+        self.assertEqual(blue_valid_coords, blue_expected)
+
 if __name__ == '__main__':
     unittest.main() 

@@ -203,6 +203,40 @@ class GameState:
                     if Coord(r, col) in self.board:
                         self.board.pop(Coord(r, col), None)
     
+    def find_valid_coords(self, color: PlayerColor):
+        """
+        Finds all viable coordinates, after the first move, where a player can potentially lay a piece
+        """
+
+        # Get all board pieces of the agents color
+        same_colour_pieces = {coord for coord, piece_color in self.board.items() if piece_color == color}
+
+        valid_surrounding_spaces = set()
+        for coord in same_colour_pieces:
+            valid_surrounding_spaces = self._find_adjacent_coords(coord, valid_surrounding_spaces)
+        
+        return valid_surrounding_spaces
+    
+    def _find_adjacent_coords(self, coord: Coord, surrounding_spaces : set) -> set:
+        """
+        Helper method to find valid adjacent coords next to a coord of its own color
+
+        Args:
+            coord: coordinate to check surroundings of
+            surrounding_spaces: set of coordinates to append valid tokens to
+
+        Returns:
+            Updated set of valid surrounding spaces
+        """
+
+        directions = [coord.up(), coord.left(), coord.right(), coord.down()]
+        for direction in directions:
+            if direction not in self.board:
+                surrounding_spaces.add(direction)
+        
+        return surrounding_spaces
+
+    
 
 class Agent:
     """
