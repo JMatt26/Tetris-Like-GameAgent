@@ -462,5 +462,88 @@ class TestValidCoords(unittest.TestCase):
         }
         self.assertEqual(blue_valid_coords, blue_expected)
 
+class TestValidMoves(unittest.TestCase):
+    def setUp(self):
+        """Set up test fixtures before each test method."""
+        self.game_state = GameState(board={}, current_player=PlayerColor.RED)
+
+    def test_empty_board_first_move(self):
+        """Test valid moves on an empty board (first move)."""
+        valid_moves = self.game_state.find_all_valid_moves(PlayerColor.RED)
+        # First move should have no valid moves as there are no pieces to be adjacent to
+        self.assertEqual(len(valid_moves), 0)
+
+    def test_single_piece_valid_moves(self):
+        """Test valid moves with a single piece on the board."""
+        # Place a single piece
+        self.game_state.board[Coord(5, 5)] = PlayerColor.RED
+        valid_moves = self.game_state.find_all_valid_moves(PlayerColor.RED)
+        # Should have valid moves adjacent to the piece
+        self.assertGreater(len(valid_moves), 0)
+
+    def test_corner_piece_valid_moves(self):
+        """Test valid moves with a piece in the corner."""
+        # Place a piece in the corner
+        self.game_state.board[Coord(0, 0)] = PlayerColor.RED
+        valid_moves = self.game_state.find_all_valid_moves(PlayerColor.RED)
+        # Should have valid moves only in valid directions from corner
+        self.assertGreater(len(valid_moves), 0)
+
+    def test_multiple_pieces_valid_moves(self):
+        """Test valid moves with multiple connected pieces."""
+        # Create a small cluster of pieces
+        self.game_state.board[Coord(5, 5)] = PlayerColor.RED
+        self.game_state.board[Coord(5, 6)] = PlayerColor.RED
+        self.game_state.board[Coord(6, 5)] = PlayerColor.RED
+        valid_moves = self.game_state.find_all_valid_moves(PlayerColor.RED)
+        # Should have valid moves around the cluster
+        self.assertGreater(len(valid_moves), 0)
+
+    def test_opponent_pieces_valid_moves(self):
+        """Test valid moves with opponent pieces on the board."""
+        # Place pieces of both colors
+        self.game_state.board[Coord(5, 5)] = PlayerColor.RED
+        self.game_state.board[Coord(5, 6)] = PlayerColor.BLUE
+        valid_moves = self.game_state.find_all_valid_moves(PlayerColor.RED)
+        # Should have valid moves that don't overlap with opponent pieces
+        self.assertGreater(len(valid_moves), 0)
+
+    def test_edge_pieces_valid_moves(self):
+        """Test valid moves with pieces at board edges."""
+        # Place pieces at edges
+        self.game_state.board[Coord(0, 5)] = PlayerColor.RED  # top edge
+        self.game_state.board[Coord(10, 5)] = PlayerColor.RED  # bottom edge
+        self.game_state.board[Coord(5, 0)] = PlayerColor.RED  # left edge
+        self.game_state.board[Coord(5, 10)] = PlayerColor.RED  # right edge
+        valid_moves = self.game_state.find_all_valid_moves(PlayerColor.RED)
+        # Should have valid moves that respect board boundaries
+        self.assertGreater(len(valid_moves), 0)
+
+    def test_nearly_filled_board_no_valid_moves(self):
+        """Test valid moves on a nearly filled board with no valid moves possible."""
+        # Fill the board almost completely with RED pieces
+        for r in range(11):
+            for c in range(11):
+                self.game_state.board[Coord(r, c)] = PlayerColor.RED
+        
+        # Create a few isolated empty slots that are too small for any shape
+        # These slots are chosen to be isolated and too small for any shape to fit
+        empty_slots = [
+            Coord(3, 3),  # Single isolated slot
+            Coord(7, 7),  # Single isolated slot
+            Coord(0, 0),  # Corner slot
+            Coord(10, 10)  # Corner slot
+        ]
+        
+        # Remove pieces from the empty slots
+        for coord in empty_slots:
+            self.game_state.board.pop(coord, None)
+        
+        valid_moves = self.game_state.find_all_valid_moves(PlayerColor.RED)
+        
+        # Verify that no valid moves are found since the empty slots are too small
+        # and isolated for any shape to fit
+        self.assertEqual(len(valid_moves), 0)
+
 if __name__ == '__main__':
     unittest.main() 

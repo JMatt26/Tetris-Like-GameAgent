@@ -236,7 +236,62 @@ class GameState:
         
         return surrounding_spaces
 
-    
+    def find_all_valid_moves(self, color: PlayerColor) -> list[tuple[Shape, Coord]]:
+        """
+        Finds all valid moves for every shape and rotation at each valid coordinate.
+        A move is considered valid if:
+        1. All coordinates of the shape are within board bounds (0-10)
+        2. None of the shape's coordinates overlap with existing pieces
+        3. At least one coordinate of the shape is adjacent to a piece of the same color
+        4. Each coordinate of the shape is tested at the valid position
+
+        Args:
+            color: The color of the player making the move
+
+        Returns:
+            A list of tuples containing (Shape, Coord) pairs representing valid moves
+        """
+        valid_moves = []
+        valid_coords = self.find_valid_coords(color)
+        
+        # Define all possible shapes
+        shapes = [
+            IShape(position=Coord(0, 0)),
+            OShape(position=Coord(0, 0)),
+            TShape(position=Coord(0, 0)),
+            JShape(position=Coord(0, 0)),
+            LShape(position=Coord(0, 0)),
+            ZShape(position=Coord(0, 0)),
+            SShape(position=Coord(0, 0))
+        ]
+        
+        # For each valid coordinate
+        for valid_coord in valid_coords:
+            # For each shape type
+            for shape in shapes:
+                # For each possible rotation
+                for rotation in range(len(shape.shapes)):
+                    # Get the relative coordinates for this rotation
+                    relative_coords = shape.shapes[rotation]
+                    
+                    # For each coordinate in the shape
+                    for rel_coord in relative_coords:
+                        # Calculate the position that would place this coordinate at the valid position
+                        # This is: valid_coord - rel_coord
+                        base_position = valid_coord - rel_coord
+                        
+                        # Create a new shape at the calculated base position
+                        test_shape = type(shape)(position=base_position, rotation_index=rotation)
+                        
+                        # Get the coordinates this shape would occupy
+                        place_action = test_shape.get_place_action()
+                        shape_coords = set(place_action.coords)
+                        
+                        # Check if any coordinates overlap with existing pieces
+                        if not any(coord in self.board for coord in shape_coords):
+                            valid_moves.append((test_shape, valid_coord))
+        
+        return valid_moves
 
 class Agent:
     """
