@@ -140,7 +140,7 @@ class GameState:
             current_player: The player whose turn it is (PlayerColor.RED or PlayerColor.BLUE).
     """
     
-    def __init__(self, board: dict[Coord, PlayerColor] = None, current_player : PlayerColor = None, turn_count: int = None):
+    def __init__(self, board: dict[Coord, PlayerColor] = None, current_player : PlayerColor = None, turn_count: int = 0):
         self.board = board
         self.current_player = current_player
         self.turn_count = turn_count
@@ -203,9 +203,15 @@ class GameState:
                     if Coord(r, col) in self.board:
                         self.board.pop(Coord(r, col), None)
     
-    def find_valid_coords(self, color: PlayerColor):
+    def _find_valid_coords(self, color: PlayerColor) -> set:
         """
         Finds all viable coordinates, after the first move, where a player can potentially lay a piece
+
+        Args: 
+            color: Player's color
+
+        Returns:
+            Set of valid adjacent coords for a token to be placed
         """
 
         # Get all board pieces of the agents color
@@ -235,15 +241,19 @@ class GameState:
                 surrounding_spaces.add(direction)
         
         return surrounding_spaces
+    
+    def _first_turn_valid_coords(self) -> set:
+        valid_coords = set()
+        for r in range(11):
+            for c in  range(11):
+                valid_coords.add(Coord(r,c))
+        
+        return valid_coords
 
     def find_all_valid_moves(self, color: PlayerColor) -> list[tuple[Shape, Coord]]:
         """
         Finds all valid moves for every shape and rotation at each valid coordinate.
-        A move is considered valid if:
-        1. All coordinates of the shape are within board bounds (0-10)
-        2. None of the shape's coordinates overlap with existing pieces
-        3. At least one coordinate of the shape is adjacent to a piece of the same color
-        4. Each coordinate of the shape is tested at the valid position
+        A move is considered valid
 
         Args:
             color: The color of the player making the move
@@ -252,7 +262,10 @@ class GameState:
             A list of tuples containing (Shape, Coord) pairs representing valid moves
         """
         valid_moves = []
-        valid_coords = self.find_valid_coords(color)
+        if self.turn_count == 0:
+            valid_coords = self._first_turn_valid_coords()
+        else:
+            valid_coords = self._find_valid_coords(color)
         
         # Define all possible shapes
         shapes = [
@@ -292,6 +305,13 @@ class GameState:
                             valid_moves.append((test_shape, valid_coord))
         
         return valid_moves
+    
+    def is_game_over(self):
+        valid_moves = self.find_all_valid_moves(self.current_player)
+        if not valid_moves:
+            return True
+        return False
+
 
 class Agent:
     """
