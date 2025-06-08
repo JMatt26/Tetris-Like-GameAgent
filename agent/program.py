@@ -307,11 +307,100 @@ class GameState:
         return valid_moves
     
     def is_game_over(self):
+        """
+        Returns:
+            True if game is over
+            False if moves can be made
+        """
         valid_moves = self.find_all_valid_moves(self.current_player)
         if not valid_moves:
             return True
         return False
+    
+class MCTS_Node:
+    """
+    This class is responsible for the structure and implementation
+    of the Monte Carlo Tree Search Algorithm.
+    """
 
+    def __init__(self, state: GameState, parent_node: 'MCTS_Node' = None, previous_action: PlaceAction = None):
+        self.state = state                          # GameState this node represents
+        self.parent_node = parent_node            # Parent Game State
+        self.previous_action = previous_action      # Action taken to get here from parent state
+        self.children: list[MCTS_Node] = []         # List of child nodes
+
+        self.visits = 0                             
+        self.total_wins = 0
+        self.untried_actions = state.find_all_valid_moves(state.current_player)
+
+    def expand(self) -> 'MCTS_Node':
+        """
+        Expands the current node by creating a child node for an untried action.
+        
+        Returns:
+            MCTS_Node: The newly created child node
+        """
+        if not self.untried_actions:
+            return None
+            
+        # Get the next untried action
+        shape, coord = self.untried_actions.pop()
+        action = shape.get_place_action()
+        
+        # Create a new game state for the child
+        new_board = self.state.board.copy()
+        new_state = GameState(
+            board=new_board,
+            current_player=self.state.current_player,
+            turn_count=self.state.turn_count + 1
+        )
+        
+        # Apply the action to the new state
+        for coord in action.coords:
+            new_board[coord] = self.state.current_player
+        
+        # Switch the current player
+        new_state.current_player = PlayerColor.RED if self.state.current_player == PlayerColor.BLUE else PlayerColor.BLUE
+        
+        # Create the child node
+        child = MCTS_Node(
+            state=new_state,
+            parent_node=self,
+            previous_action=action
+        )
+        
+        # Add the child to the children list
+        self.children.append(child)
+        
+        return child
+
+    def select_child(self, exploration_constant: float = 1.41) -> 'MCTS_Node':
+        """
+        Selects the best child node using the UCB1 formula.
+        
+        Args:
+            exploration_constant: The exploration parameter (default is sqrt(2))
+            
+        Returns:
+            MCTS_Node: The selected child node
+        """
+        if not self.children:
+            return None
+            
+        # Calculate UCB1 value for each child
+        ucb_values = []
+        for child in self.children:
+            if child.visits == 0:
+                # If child hasn't been visited, give it maximum value
+                ucb_values.append(float('inf'))
+            else:
+                # UCB1 formula: exploitation + exploration
+                exploitation = child.total_wins / child.visits
+                exploration = exploration_constant * np.sqrt(np.log(self.visits) / child.visits)
+                ucb_values.append(exploitation + exploration)
+        
+        # Return the child with the highest UCB1 value
+        return self.children[np.argmax(ucb_values)]
 
 class Agent:
     """
