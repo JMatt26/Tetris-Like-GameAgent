@@ -4,6 +4,7 @@
 from referee.game import PlayerColor, Action, PlaceAction, Coord
 
 import numpy as np
+import copy
 
 class Shape:
     """
@@ -307,10 +308,158 @@ class GameState:
         return valid_moves
     
     def is_game_over(self):
+        """
+        Returns:
+            True if game is over
+            False if moves can be made
+        """
         valid_moves = self.find_all_valid_moves(self.current_player)
         if not valid_moves:
             return True
         return False
+    
+class MCTS_Node:
+    """
+    This class is responsible for the structure and implementation
+    of the Monte Carlo Tree Search Algorithm.
+    """
+
+    def __init__(self, state: GameState, parent_node: 'MCTS_Node' = None, previous_action: PlaceAction = None):
+        self.state = state                          # GameState this node represents
+        self.parent_node = parent_node            # Parent Game State
+        self.previous_action = previous_action      # Action taken to get here from parent state
+        self.children: list[MCTS_Node] = []         # List of child nodes
+
+        self.visits = 0                             
+        self.total_wins = 0
+        self.untried_actions = state.find_all_valid_moves(state.current_player)
+
+    def expand(self) -> 'MCTS_Node':
+        """
+        Expands the current node by creating a child node for an untried action.
+        
+        Returns:
+            MCTS_Node: The newly created child node
+        """
+        if not self.untried_actions:
+            return None
+            
+        # Get the next untried action
+        shape, coord = self.untried_actions.pop()
+        action = shape.get_place_action()
+        
+        # Create a new game state for the child
+        new_board = copy.deepcopy(self.state.board)
+        new_state = GameState(
+            board=new_board,
+            current_player=self.state.current_player,
+            turn_count=self.state.turn_count + 1
+        )
+        
+        # Apply the action to the new state
+        for coord in action.coords:
+            new_board[coord] = self.state.current_player
+            
+        # Switch the current player
+        new_state.current_player = PlayerColor.RED if self.state.current_player == PlayerColor.BLUE else PlayerColor.BLUE
+        
+        # Create the child node
+        child = MCTS_Node(
+            state=new_state,
+            parent_node=self,
+            previous_action=action
+        )
+        
+        # Add the child to the children list
+        self.children.append(child)
+        
+        return child
+
+    def select_child(self, exploration_constant: float = 1.41) -> 'MCTS_Node':
+        """
+        Selects the best child node using the UCB1 formula.
+        
+        Args:
+            exploration_constant: The exploration parameter (default is sqrt(2))
+            
+        Returns:
+            MCTS_Node: The selected child node
+        """
+        if not self.children:
+            return None
+            
+        # Calculate UCB1 value for each child
+        ucb_values = []
+        for child in self.children:
+            if child.visits == 0:
+                # If child hasn't been visited, give it maximum value
+                ucb_values.append(float('inf'))
+            else:
+                # UCB1 formula: exploitation + exploration
+                exploitation = child.total_wins / child.visits
+                exploration = exploration_constant * np.sqrt(np.log(self.visits) / child.visits)
+                ucb_values.append(exploitation + exploration)
+        
+        # Return the child with the highest UCB1 value
+        return self.children[np.argmax(ucb_values)]
+
+    def simulate(self) -> bool:
+        """
+        Simulates a random playout from the current state until reaching a terminal state.
+        
+        Returns:
+            bool: True if the original player (from this node) wins, False otherwise
+        """
+        current_state = copy.deepcopy(self.state)
+        original_player = current_state.current_player
+        
+        while not current_state.is_game_over():
+            # Get all valid moves for the current player
+            valid_moves = current_state.find_all_valid_moves(current_state.current_player)
+            
+            if not valid_moves:
+                break
+                
+            # Randomly select a move
+            shape, coord = np.random.choice(valid_moves)
+            action = shape.get_place_action()
+            
+            # Apply the move
+            for coord in action.coords:
+                current_state.board[coord] = current_state.current_player
+            
+            # Check for and clear any completed lines
+            full_rows, full_cols = current_state.is_line_full(action)
+            current_state.clear_lines(full_rows, full_cols)
+                
+            # Switch players
+            current_state.current_player = PlayerColor.RED if current_state.current_player == PlayerColor.BLUE else PlayerColor.BLUE
+            
+        # Determine the winner
+        # If the game is over and the current player can't move, the previous player wins
+        if current_state.is_game_over():
+            # The winner is the player who just moved (the one who made the other player unable to move)
+            winner = PlayerColor.RED if current_state.current_player == PlayerColor.BLUE else PlayerColor.BLUE
+            return winner == original_player
+            
+        return False  # In case of unexpected termination
+
+def backpropagate(self, result: bool, original_player: PlayerColor):
+    """
+    Updates the statistics of this node and all its ancestors based on the simulation result.
+
+    Args:
+        result: True if the original player won, False otherwise
+        original_player: The player who started the simulation
+    """
+    self.visits += 1
+
+    # Reward is from the original player's perspective
+    if self.state.current_player != original_player:
+        self.total_wins += 1 if result else 0
+
+    if self.parent_node is not None:
+        self.parent_node.backpropagate(result, original_player)
 
 
 class Agent:
