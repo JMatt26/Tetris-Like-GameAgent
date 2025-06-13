@@ -565,7 +565,7 @@ class Agent:
             iterations += 1
             
             # Early exit if we've done enough iterations
-            if iterations >= 10:
+            if iterations >= 20:
                 break
         
         # Select the best child of the root node
