@@ -5,6 +5,7 @@ from referee.game import PlayerColor, Action, PlaceAction, Coord
 
 import numpy as np
 import copy
+import time
 
 class Shape:
     """
@@ -263,7 +264,10 @@ class GameState:
             A list of tuples containing (Shape, Coord) pairs representing valid moves
         """
         valid_moves = []
-        if self.turn_count == 0:
+        
+        # Check if this is the player's first turn (no pieces of their color on the board)
+        player_pieces = {coord for coord, piece_color in self.board.items() if piece_color == color}
+        if not player_pieces:
             valid_coords = self._first_turn_valid_coords()
         else:
             valid_coords = self._find_valid_coords(color)
@@ -413,15 +417,22 @@ class MCTS_Node:
         current_state = copy.deepcopy(self.state)
         original_player = current_state.current_player
         
-        while not current_state.is_game_over():
+        # Limit simulation depth to prevent too long simulations
+        max_depth = 10
+        depth = 0
+        
+        while depth < max_depth:
             # Get all valid moves for the current player
             valid_moves = current_state.find_all_valid_moves(current_state.current_player)
             
             if not valid_moves:
-                break
+                # If no valid moves, the current player loses
+                winner = PlayerColor.RED if current_state.current_player == PlayerColor.BLUE else PlayerColor.BLUE
+                return winner == original_player
                 
             # Randomly select a move
-            shape, coord = np.random.choice(valid_moves)
+            move_index = np.random.randint(0, len(valid_moves))
+            shape, coord = valid_moves[move_index]
             action = shape.get_place_action()
             
             # Apply the move
@@ -435,31 +446,27 @@ class MCTS_Node:
             # Switch players
             current_state.current_player = PlayerColor.RED if current_state.current_player == PlayerColor.BLUE else PlayerColor.BLUE
             
-        # Determine the winner
-        # If the game is over and the current player can't move, the previous player wins
-        if current_state.is_game_over():
-            # The winner is the player who just moved (the one who made the other player unable to move)
-            winner = PlayerColor.RED if current_state.current_player == PlayerColor.BLUE else PlayerColor.BLUE
-            return winner == original_player
+            depth += 1
             
-        return False  # In case of unexpected termination
+        # If we reach max depth, consider it a draw
+        return False
 
-def backpropagate(self, result: bool, original_player: PlayerColor):
-    """
-    Updates the statistics of this node and all its ancestors based on the simulation result.
+    def backpropagate(self, result: bool, original_player: PlayerColor):
+        """
+        Updates the statistics of this node and all its ancestors based on the simulation result.
 
-    Args:
-        result: True if the original player won, False otherwise
-        original_player: The player who started the simulation
-    """
-    self.visits += 1
+        Args:
+            result: True if the original player won, False otherwise
+            original_player: The player who started the simulation
+        """
+        self.visits += 1
 
-    # Reward is from the original player's perspective
-    if self.state.current_player != original_player:
-        self.total_wins += 1 if result else 0
+        # Reward is from the original player's perspective
+        if self.state.current_player != original_player:
+            self.total_wins += 1 if result else 0
 
-    if self.parent_node is not None:
-        self.parent_node.backpropagate(result, original_player)
+        if self.parent_node is not None:
+            self.parent_node.backpropagate(result, original_player)
 
 
 class Agent:
@@ -489,23 +496,91 @@ class Agent:
         This method is called by the referee each time it is the agent's turn
         to take an action. It must always return an action object.
         """
+        # Create a GameState object from our current state
+        current_state = GameState(
+            board=self.game_state,
+            current_player=self._color,
+            turn_count=self.turn_count
+        )
+        
+        # Create root node for MCTS
+        root = MCTS_Node(current_state)
+        
+        # Time limit for MCTS (in seconds)
+        time_limit = 170  # Leave 10 seconds buffer
+        start_time = time.time()
+        
+        # Run MCTS iterations until time limit
+        iterations = 0
+        while time.time() - start_time < time_limit:
+            # Selection
+            node = root
+            while node.untried_actions == [] and node.children != []:
+                node = node.select_child()
+            
+            # Expansion
+            if node.untried_actions:
+                node = node.expand()
+            
+            # Simulation
+            result = node.simulate()
+            
+            # Backpropagation
+            node.backpropagate(result, self._color)
+            
+            iterations += 1
+            
+            # Early exit if we've done enough iterations
+            if iterations >= 10:
+                break
+        
+        # Select the best child of the root node
+        if root.children:
+            # Select the child with the most visits
+            best_child = max(root.children, key=lambda child: child.visits)
+            return best_child.previous_action
+        else:
+            # If no children were created (shouldn't happen if there are valid moves),
+            # select a random valid move
+            valid_moves = current_state.find_all_valid_moves(self._color)
+            if valid_moves:
+                move_index = np.random.randint(0, len(valid_moves))
+                shape, coord = valid_moves[move_index]
+                return shape.get_place_action()
+            else:
+                # This should never happen as the referee should handle game over
+                raise Exception("No valid moves available")
 
     def update(self, color: PlayerColor, action: Action, **referee: dict):
         """
         This method is called by the referee after an agent has taken their
         turn. You should use it to update the agent's internal game state.
         """
-
         # There is only one action type, PlaceAction
         place_action: PlaceAction = action
         c1, c2, c3, c4 = place_action.coords
 
+        # Update the board with the new piece
         self.game_state[c1] = color
         self.game_state[c2] = color
         self.game_state[c3] = color
         self.game_state[c4] = color
 
+        # Create a temporary GameState to check for and clear lines
+        temp_state = GameState(
+            board=self.game_state,
+            current_player=color,
+            turn_count=self.turn_count
+        )
+
+        # Check for and clear any completed lines
+        full_rows, full_cols = temp_state.is_line_full(place_action)
+        temp_state.clear_lines(full_rows, full_cols)
+
+        # Update our game state with the cleared lines
+        self.game_state = temp_state.board
+
         self.turn_count += 1
 
-        print(f"{color} played PLACE action: {c1}, {c2}, {c3}, {c4}")
+        # print(f"{color} played PLACE action: {c1}, {c2}, {c3}, {c4}")
 
