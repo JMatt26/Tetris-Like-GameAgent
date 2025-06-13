@@ -204,6 +204,33 @@ class GameState:
                 for r in range(0,11):
                     if Coord(r, col) in self.board:
                         self.board.pop(Coord(r, col), None)
+
+    def _clearance_score(self, shape: Shape) -> float:
+        """
+        Heuristic score that rewards moves which bring rows/cols closer to full.
+        """
+        temp_board = copy.deepcopy(self.board)
+        action = shape.get_place_action()
+
+        for coord in action.coords:
+            temp_board[coord] = self.current_player
+
+        # Count filled cells in affected rows and cols
+        rows = {coord.r for coord in action.coords}
+        cols = {coord.c for coord in action.coords}
+
+        score = 0
+
+        for r in rows:
+            filled = sum(1 for c in range(11) if Coord(r, c) in temp_board)
+            score += filled / 11  # Normalize row fill level
+
+        for c in cols:
+            filled = sum(1 for r in range(11) if Coord(r, c) in temp_board)
+            score += filled / 11  # Normalize col fill level
+
+        return score
+
     
     def _find_valid_coords(self, color: PlayerColor) -> set:
         """
@@ -308,6 +335,13 @@ class GameState:
                         # Check if any coordinates overlap with existing pieces
                         if not any(coord in self.board for coord in shape_coords):
                             valid_moves.append((test_shape, valid_coord))
+
+        np.random.shuffle(valid_moves)  # Ensure's fair tie breaking for before applying heuristic
+
+        valid_moves.sort(
+            key=lambda move: self._clearance_score(move[0]),
+            reverse=True
+        )
         
         return valid_moves
     
@@ -531,7 +565,7 @@ class Agent:
             iterations += 1
             
             # Early exit if we've done enough iterations
-            if iterations >= 10:
+            if iterations >= 20:
                 break
         
         # Select the best child of the root node
